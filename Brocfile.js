@@ -44,4 +44,6 @@ esModules = compileModules(esModules, {
 var oldIECSS = stripMQs(cssWithMQs(pub), {suffix: '-old-ie'});
 
 // Export merged trees.
-module.exports = mergeTrees([vendor, pub, oldIECSS, esModules, depGraph]);
+module.exports = mergeTrees([vendor, pub, oldIECSS, esModules, depGraph], {
+    overwrite: true
+});
