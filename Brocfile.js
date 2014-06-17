@@ -1,9 +1,11 @@
+/*jslint node: true*/
 'use strict';
 
 var mergeTrees     = require('broccoli-merge-trees'),
     unwatchedTree  = require('broccoli-unwatched-tree'),
-    compileModules = require('./lib/compile-modules'),
-    graphModules   = require('./lib/graph'),
+    pickModules    = require('broccoli-js-module-format'),
+    compileModules = require('broccoli-es6-module-transpiler'),
+    graphModules   = require('broccoli-es-dependency-graph'),
     cssWithMQs     = require('./lib/css-with-mqs'),
     stripMQs       = require('./lib/css-strip-mqs'),
     mapFiles       = require('./lib/map-files');
@@ -23,21 +25,23 @@ var vendor = mergeTrees([
 ]);
 
 var pub = 'public/';
+var esModules = pickModules(pub, {
+    type: 'es'
+});
 
 // Calculate the ES6 module dependency graph.
-var modGraph = graphModules(pub, {
-    basePath      : 'js/',
-    resolveImports: true
+var depGraph = graphModules(esModules, {
+    includeBindings: true,
+    dest: 'graph.json'
 });
 
 // Compile ES6 Modules in `pub`.
-pub = compileModules(pub, {
-    basePath: 'js/',
-    type    : 'yui'
+esModules = compileModules(esModules, {
+    type: 'yui'
 });
 
 // Strip Media Queries from CSS files and save copy as "-old-ie.css".
 var oldIECSS = stripMQs(cssWithMQs(pub), {suffix: '-old-ie'});
 
 // Export merged trees.
-module.exports = mergeTrees([vendor, pub, oldIECSS, modGraph]);
+module.exports = mergeTrees([vendor, pub, oldIECSS, esModules, depGraph]);
